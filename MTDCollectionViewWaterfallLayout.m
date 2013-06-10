@@ -97,8 +97,8 @@
         CGFloat xOffset = _sectionInset.left + (_itemWidth + _interitemSpacing) * columnIndex;
         CGFloat yOffset = [(_columnHeights[columnIndex]) floatValue];
 
-        UICollectionViewLayoutAttributes *attributes =
-        [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+        MTDCollectionViewLayoutAttributes *attributes =
+        [MTDCollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
         attributes.frame = CGRectMake(xOffset, yOffset, self.itemWidth, itemHeight);
         [_itemAttributes addObject:attributes];
         _columnHeights[columnIndex] = @(yOffset + itemHeight + _interitemSpacing);
@@ -118,14 +118,14 @@
     return contentSize;
 }
 
-- (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)path
+- (MTDCollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)path
 {
     return (self.itemAttributes)[path.item];
 }
 
 - (NSArray *)layoutAttributesForElementsInRect:(CGRect)rect
 {
-    return [self.itemAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(UICollectionViewLayoutAttributes *evaluatedObject, NSDictionary *bindings) {
+    return [self.itemAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(MTDCollectionViewLayoutAttributes *evaluatedObject, NSDictionary *bindings) {
         return CGRectIntersectsRect(rect, [evaluatedObject frame]);
     }]];
 }
