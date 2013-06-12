@@ -75,33 +75,35 @@
 {
     [super prepareLayout];
 
-    _itemCount = [[self collectionView] numberOfItemsInSection:0];
+    if ([[self collectionView] numberOfSections] > 0) {
+        _itemCount = [[self collectionView] numberOfItemsInSection:0];
 
-    NSAssert(_columnCount > 1, @"columnCount for UICollectionViewWaterfallLayout should be greater than 1.");
-    CGFloat width = self.collectionView.frame.size.width - _sectionInset.left - _sectionInset.right;
-    _interitemSpacing = floorf((width - _columnCount * _itemWidth) / (_columnCount - 1));
+        NSAssert(_columnCount > 1, @"columnCount for UICollectionViewWaterfallLayout should be greater than 1.");
+        CGFloat width = self.collectionView.frame.size.width - _sectionInset.left - _sectionInset.right;
+        _interitemSpacing = floorf((width - _columnCount * _itemWidth) / (_columnCount - 1));
 
-    _itemAttributes = [NSMutableArray arrayWithCapacity:_itemCount];
-    _columnHeights = [NSMutableArray arrayWithCapacity:_columnCount];
-    for (NSInteger idx = 0; idx < _columnCount; idx++) {
-        [_columnHeights addObject:@(_sectionInset.top)];
-    }
+        _itemAttributes = [NSMutableArray arrayWithCapacity:_itemCount];
+        _columnHeights = [NSMutableArray arrayWithCapacity:_columnCount];
+        for (NSInteger idx = 0; idx < _columnCount; idx++) {
+            [_columnHeights addObject:@(_sectionInset.top)];
+        }
 
-    // Item will be put into shortest column.
-    for (NSInteger idx = 0; idx < _itemCount; idx++) {
-        NSIndexPath *indexPath = [NSIndexPath indexPathForItem:idx inSection:0];
-        CGFloat itemHeight = [self.delegate collectionView:self.collectionView
-                                                    layout:self
-                                  heightForItemAtIndexPath:indexPath];
-        NSUInteger columnIndex = [self shortestColumnIndex];
-        CGFloat xOffset = _sectionInset.left + (_itemWidth + _interitemSpacing) * columnIndex;
-        CGFloat yOffset = [(_columnHeights[columnIndex]) floatValue];
+        // Item will be put into shortest column.
+        for (NSInteger idx = 0; idx < _itemCount; idx++) {
+            NSIndexPath *indexPath = [NSIndexPath indexPathForItem:idx inSection:0];
+            CGFloat itemHeight = [self.delegate collectionView:self.collectionView
+                                                        layout:self
+                                      heightForItemAtIndexPath:indexPath];
+            NSUInteger columnIndex = [self shortestColumnIndex];
+            CGFloat xOffset = _sectionInset.left + (_itemWidth + _interitemSpacing) * columnIndex;
+            CGFloat yOffset = [(_columnHeights[columnIndex]) floatValue];
 
-        MTDCollectionViewLayoutAttributes *attributes =
-        [MTDCollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
-        attributes.frame = CGRectMake(xOffset, yOffset, self.itemWidth, itemHeight);
-        [_itemAttributes addObject:attributes];
-        _columnHeights[columnIndex] = @(yOffset + itemHeight + _interitemSpacing);
+            UICollectionViewLayoutAttributes *attributes =
+            [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+            attributes.frame = CGRectMake(xOffset, yOffset, self.itemWidth, itemHeight);
+            [_itemAttributes addObject:attributes];
+            _columnHeights[columnIndex] = @(yOffset + itemHeight + _interitemSpacing);
+        }
     }
 }
 
@@ -118,14 +120,14 @@
     return contentSize;
 }
 
-- (MTDCollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)path
+- (UICollectionViewLayoutAttributes *)layoutAttributesForItemAtIndexPath:(NSIndexPath *)path
 {
     return (self.itemAttributes)[path.item];
 }
 
 - (NSArray *)layoutAttributesForElementsInRect:(CGRect)rect
 {
-    return [self.itemAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(MTDCollectionViewLayoutAttributes *evaluatedObject, NSDictionary *bindings) {
+    return [self.itemAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(UICollectionViewLayoutAttributes *evaluatedObject, NSDictionary *bindings) {
         return CGRectIntersectsRect(rect, [evaluatedObject frame]);
     }]];
 }
@@ -166,7 +168,7 @@
             index = idx;
         }
     }];
-
+    
     return index;
 }
 

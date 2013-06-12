@@ -11,14 +11,14 @@
 @class MTDCollectionViewWaterfallLayout;
 
 
-@protocol MTDCollectionViewDelegateWaterfallLayout <MTDCollectionViewDelegate>
-- (CGFloat)collectionView:(MTDCollectionView *)collectionView
+@protocol MTDCollectionViewDelegateWaterfallLayout <UICollectionViewDelegate>
+- (CGFloat)collectionView:(UICollectionView *)collectionView
                    layout:(MTDCollectionViewWaterfallLayout *)collectionViewLayout
  heightForItemAtIndexPath:(NSIndexPath *)indexPath;
 @end
 
 
-@interface MTDCollectionViewWaterfallLayout : MTDCollectionViewLayout
+@interface MTDCollectionViewWaterfallLayout : UICollectionViewLayout
 
 @property (nonatomic, weak) IBOutlet id<MTDCollectionViewDelegateWaterfallLayout> delegate;
 @property (nonatomic, assign) NSUInteger columnCount; // How many columns
