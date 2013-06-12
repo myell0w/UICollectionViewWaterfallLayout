@@ -13,6 +13,7 @@
 @property (nonatomic, assign) CGFloat interitemSpacing;
 @property (nonatomic, strong) NSMutableArray *columnHeights; // height for each column
 @property (nonatomic, strong) NSMutableArray *itemAttributes; // attributes for each item
+@property (nonatomic, strong) NSMutableDictionary *columnIndexes;
 
 @property (nonatomic, strong) NSSet *indexPathsToInsert;
 @property (nonatomic, strong) NSSet *indexPathsToDelete;
@@ -52,6 +53,7 @@
     _columnCount = 2;
     _itemWidth = 140.0f;
     _sectionInset = UIEdgeInsetsZero;
+    _columnIndexes = [NSMutableDictionary dictionary];
 }
 
 - (id)init
@@ -63,17 +65,14 @@
     return self;
 }
 
-#pragma mark - Life cycle
-- (void)dealloc
-{
-    [_columnHeights removeAllObjects];
-    _columnHeights = nil;
+#pragma mark - Methods to Override
 
-    [_itemAttributes removeAllObjects];
-    _itemAttributes = nil;
+- (void)invalidateLayout {
+    [super invalidateLayout];
+
+    [self.columnIndexes removeAllObjects];
 }
 
-#pragma mark - Methods to Override
 - (void)prepareLayout
 {
     [super prepareLayout];
@@ -91,18 +90,22 @@
             [_columnHeights addObject:@(_sectionInset.top)];
         }
 
-        // Item will be put into shortest column.
+        // Item will be put into shortest column.on first appear, afterwards they keep their column to not jump around
         for (NSInteger idx = 0; idx < _itemCount; idx++) {
             NSIndexPath *indexPath = [NSIndexPath indexPathForItem:idx inSection:0];
             CGFloat itemHeight = [self.delegate collectionView:self.collectionView
                                                         layout:self
                                       heightForItemAtIndexPath:indexPath];
-            NSUInteger columnIndex = [self shortestColumnIndex];
+
+            NSNumber *suggestedColumn = self.columnIndexes[indexPath];
+
+            NSUInteger columnIndex = suggestedColumn != nil ? [suggestedColumn unsignedIntegerValue] : [self shortestColumnIndex];
             CGFloat xOffset = _sectionInset.left + (_itemWidth + _interitemSpacing) * columnIndex;
             CGFloat yOffset = [(_columnHeights[columnIndex]) floatValue];
 
-            UICollectionViewLayoutAttributes *attributes =
-            [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
+            self.columnIndexes[indexPath] = @(columnIndex);
+
+            UICollectionViewLayoutAttributes *attributes = [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
             attributes.frame = CGRectMake(xOffset, yOffset, self.itemWidth, itemHeight);
             attributes.transform3D = CATransform3DIdentity;
             [_itemAttributes addObject:attributes];
