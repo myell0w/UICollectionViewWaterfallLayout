@@ -14,6 +14,9 @@
 @property (nonatomic, strong) NSMutableArray *columnHeights; // height for each column
 @property (nonatomic, strong) NSMutableArray *itemAttributes; // attributes for each item
 
+@property (nonatomic, strong) NSSet *indexPathsToInsert;
+@property (nonatomic, strong) NSSet *indexPathsToDelete;
+
 @end
 
 @implementation MTDCollectionViewWaterfallLayout
@@ -101,6 +104,7 @@
             UICollectionViewLayoutAttributes *attributes =
             [UICollectionViewLayoutAttributes layoutAttributesForCellWithIndexPath:indexPath];
             attributes.frame = CGRectMake(xOffset, yOffset, self.itemWidth, itemHeight);
+            attributes.transform3D = CATransform3DIdentity;
             [_itemAttributes addObject:attributes];
             _columnHeights[columnIndex] = @(yOffset + itemHeight + _interitemSpacing);
         }
@@ -125,6 +129,32 @@
     return (self.itemAttributes)[path.item];
 }
 
+- (UICollectionViewLayoutAttributes *)initialLayoutAttributesForAppearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
+    if ([self.indexPathsToInsert containsObject:itemIndexPath]) {
+        return [self layoutAttributesForAppearingOrDisappearingItemAtIndexPath:itemIndexPath];
+    } else {
+        return [self layoutAttributesForItemAtIndexPath:itemIndexPath];
+    }
+}
+
+//- (UICollectionViewLayoutAttributes *)finalLayoutAttributesForDisappearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
+//    if ([self.indexPathsToDelete containsObject:itemIndexPath]) {
+//        return [self layoutAttributesForAppearingOrDisappearingItemAtIndexPath:itemIndexPath];
+//    } else {
+//        return [self layoutAttributesForItemAtIndexPath:itemIndexPath];
+//    }
+//}
+
+// Private method: we want the same animation when inserting/deleting, just reversed
+- (UICollectionViewLayoutAttributes *)layoutAttributesForAppearingOrDisappearingItemAtIndexPath:(NSIndexPath *)itemIndexPath {
+    UICollectionViewLayoutAttributes *attributes = [self layoutAttributesForItemAtIndexPath:itemIndexPath];
+
+    attributes.transform3D = CATransform3DMakeScale(1/100.f, 1/100.f, 1.f);
+    attributes.alpha = 0.f;
+
+    return attributes;
+}
+
 - (NSArray *)layoutAttributesForElementsInRect:(CGRect)rect
 {
     return [self.itemAttributes filteredArrayUsingPredicate:[NSPredicate predicateWithBlock:^BOOL(UICollectionViewLayoutAttributes *evaluatedObject, NSDictionary *bindings) {
@@ -135,6 +165,35 @@
 - (BOOL)shouldInvalidateLayoutForBoundsChange:(CGRect)newBounds
 {
     return NO;
+}
+
+// we keep track of the indexPaths of the objects that are actually appearing/disappearing
+// because initialLayoutAttributesForAppearingItemAtIndexPath: and finalLayoutAttributesForAppearingItemAtIndexPath:
+// get called for every item, not only the appearing/disappearing ones
+- (void)prepareForCollectionViewUpdates:(NSArray *)updateItems {
+    [super prepareForCollectionViewUpdates:updateItems];
+
+    NSUInteger capacity = updateItems.count/3; // rough expectation
+    NSMutableSet *insertions = [[NSMutableSet alloc] initWithCapacity:capacity];
+    NSMutableSet *deletions = [[NSMutableSet alloc] initWithCapacity:capacity];
+
+    for (MTDCollectionViewUpdateItem *item in updateItems) {
+        if (item.updateAction == UICollectionUpdateActionInsert) {
+            [insertions addObject:item.indexPathAfterUpdate];
+        } else if (item.updateAction == UICollectionUpdateActionDelete) {
+            [deletions addObject:item.indexPathBeforeUpdate];
+        }
+    }
+
+    self.indexPathsToInsert = insertions;
+    self.indexPathsToDelete = deletions;
+}
+
+- (void)finalizeCollectionViewUpdates {
+    [super finalizeCollectionViewUpdates];
+
+    self.indexPathsToInsert = nil;
+    self.indexPathsToDelete = nil;
 }
 
 #pragma mark - Private Methods
